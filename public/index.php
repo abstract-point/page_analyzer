@@ -1,12 +1,15 @@
 <?php
 
+require __DIR__ . '/../vendor/autoload.php';
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
+use App\Database\Connection;
 
-require __DIR__ . '/../vendor/autoload.php';
+
 
 $app = AppFactory::create();
 $twig = Twig::create('../templates', ['cache' => false]);
@@ -24,6 +27,24 @@ $app->get(
             ]
         );
     }
-);
+)->setName('main');
+
+$app->post(
+    '/urls',
+    function (Request $request, Response $response,) {
+        $params = $request->getParsedBody();
+        
+        $name = $params['url']['name'];
+        // dump($name);exit;
+        $pdo = Connection::get()->connect();
+        $sql = 'INSERT INTO urls(name) VALUES(:name)';
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->bindValue(':name', $name);
+
+        $stmt->execute();
+        dump($pdo->lastInsertId('urls_id_seq'));
+    }
+)->setName('urls');
 
 $app->run();
