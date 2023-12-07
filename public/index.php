@@ -33,10 +33,10 @@ $app->post(
     '/urls',
     function (Request $request, Response $response,) {
         $params = $request->getParsedBody();
-        
         $name = $params['url']['name'];
-        // dump($name);exit;
+
         $pdo = Connection::get()->connect();
+
         $sql = 'INSERT INTO urls(name) VALUES(:name)';
         $stmt = $pdo->prepare($sql);
 
