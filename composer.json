@@ -15,7 +15,10 @@
     "require": {
         "slim/slim": "^4.12",
         "slim/psr7": "^1.6",
-        "slim/twig-view": "^3.3"
+        "slim/twig-view": "^3.3",
+        "vlucas/valitron": "^1.4",
+        "slim/flash": "^0.4.0",
+        "php-di/php-di": "^7.0"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "3.*",

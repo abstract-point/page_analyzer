@@ -5,21 +5,33 @@ require __DIR__ . '/../vendor/autoload.php';
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
+use DI\Container;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use App\Database\Connection;
+use Valitron\Validator;
 
+session_start();
 
+$container = new Container();
+AppFactory::setContainer($container);
+
+$container->set('view', function() {
+    return Twig::create('../templates', ['cache' => false]);
+});
+
+$container->set('flash', function () {
+    return new \Slim\Flash\Messages();
+});
 
 $app = AppFactory::create();
-$twig = Twig::create('../templates', ['cache' => false]);
-$app->add(TwigMiddleware::create($app, $twig));
+$app->add(TwigMiddleware::createFromContainer($app));
+$app->addErrorMiddleware(true, true, true);
 
 $app->get(
     '/',
     function (Request $request, Response $response, $args) {
-        $view = Twig::fromRequest($request);
-        return $view->render(
+        return $this->get('view')->render(
             $response,
             'main.html',
             [
@@ -33,8 +45,22 @@ $app->post(
     '/urls',
     function (Request $request, Response $response,) {
         $params = $request->getParsedBody();
-        $name = $params['url']['name'];
 
+        $v = new Validator($params['url']);
+        $v->rule('required', 'name');
+        $v->rule('url', 'name');
+
+        // Валидация полученного от пользователя url
+        if ($v->validate()) {
+            $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
+            $name = $params['url']['name'];
+        } else {
+            // Errors
+            $errors = $v->errors();
+        }
+
+        // TODO: Сначала проверяем, есть ли уже такой сайт в базе,
+        // если нет, добавляем, иначе записываем flash и выводим его
         $pdo = Connection::get()->connect();
 
         $sql = 'INSERT INTO urls(name) VALUES(:name)';
@@ -45,6 +71,6 @@ $app->post(
         $stmt->execute();
         dump($pdo->lastInsertId('urls_id_seq'));
     }
-)->setName('urls');
+)->setName('addUrls');
 
 $app->run();
