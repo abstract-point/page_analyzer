@@ -10,13 +10,14 @@ use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use App\Database\Connection;
 use Valitron\Validator;
+use Carbon\Carbon;
 
 session_start();
 
 $container = new Container();
 AppFactory::setContainer($container);
 
-$container->set('view', function() {
+$container->set('view', function () {
     return Twig::create('../templates', ['cache' => false]);
 });
 
@@ -35,7 +36,7 @@ $app->get(
             $response,
             'main.html',
             [
-            'first' => 'My name is Ivan!'
+            'errors' => [],
             ]
         );
     }
@@ -49,27 +50,54 @@ $app->post(
         $v = new Validator($params['url']);
         $v->rule('required', 'name');
         $v->rule('url', 'name');
+        $v->rule('lengthBetween', 'name', 1, 255);
 
         // Валидация полученного от пользователя url
         if ($v->validate()) {
-            $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
             $name = $params['url']['name'];
+            $parsedUrl = parse_url($name);
+            $normalizedUrl = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
+            //dump($normalizedUrl);die;
         } else {
             // Errors
             $errors = $v->errors();
+            return $this->get('view')->render(
+                $response,
+                'main.html',
+                [
+                'errors' => $errors,
+                ]
+            );
+            // 
         }
 
         // TODO: Сначала проверяем, есть ли уже такой сайт в базе,
         // если нет, добавляем, иначе записываем flash и выводим его
         $pdo = Connection::get()->connect();
 
-        $sql = 'INSERT INTO urls(name) VALUES(:name)';
-        $stmt = $pdo->prepare($sql);
-
-        $stmt->bindValue(':name', $name);
-
+        $sqlFind = 'SELECT id FROM urls WHERE name = :name';
+        $stmt = $pdo->prepare($sqlFind);
+        $stmt->bindValue(':name', $normalizedUrl);
         $stmt->execute();
-        dump($pdo->lastInsertId('urls_id_seq'));
+        $finded = $stmt->fetch(PDO::FETCH_ASSOC);
+        //dump($finded);die;
+
+        if (!$finded) {
+            $sqlInsert = 'INSERT INTO urls(name) VALUES(:name)';
+            $stmt = $pdo->prepare($sqlInsert);
+    
+            $stmt->bindValue(':name', $normalizedUrl);
+    
+            $stmt->execute();
+            $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
+            dump($pdo->lastInsertId('urls_id_seq'));
+        } else {
+            $id = $finded['id'];
+            $this->get('flash')->addMessage('unsuccess', 'Страница уже существует');
+        }
+
+
+        
     }
 )->setName('addUrls');
 
