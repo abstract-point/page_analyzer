@@ -2,8 +2,8 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Http\Response as Response;
+use Slim\Http\ServerRequest as Request;
 use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Views\Twig;
@@ -29,14 +29,18 @@ $app = AppFactory::create();
 $app->add(TwigMiddleware::createFromContainer($app));
 $app->addErrorMiddleware(true, true, true);
 
+$router = $app->getRouteCollector()->getRouteParser();
+
 $app->get(
     '/',
     function (Request $request, Response $response, $args) {
+        $template = 'main.html';
         return $this->get('view')->render(
             $response,
-            'main.html',
+            'layout.html',
             [
             'errors' => [],
+            'template' => $template,
             ]
         );
     }
@@ -44,35 +48,32 @@ $app->get(
 
 $app->post(
     '/urls',
-    function (Request $request, Response $response,) {
+    function (Request $request, Response $response) use ($router) {
         $params = $request->getParsedBody();
 
         $v = new Validator($params['url']);
         $v->rule('required', 'name');
         $v->rule('url', 'name');
         $v->rule('lengthBetween', 'name', 1, 255);
+        $name = $params['url']['name'];
 
-        // Валидация полученного от пользователя url
         if ($v->validate()) {
-            $name = $params['url']['name'];
             $parsedUrl = parse_url($name);
             $normalizedUrl = "{$parsedUrl['scheme']}://{$parsedUrl['host']}";
-            //dump($normalizedUrl);die;
         } else {
-            // Errors
             $errors = $v->errors();
+            $template = 'main.html';
             return $this->get('view')->render(
                 $response,
-                'main.html',
+                'layout.html',
                 [
                 'errors' => $errors,
+                'template' => $template,
+                'name' => $name,
                 ]
             );
-            // 
         }
 
-        // TODO: Сначала проверяем, есть ли уже такой сайт в базе,
-        // если нет, добавляем, иначе записываем flash и выводим его
         $pdo = Connection::get()->connect();
 
         $sqlFind = 'SELECT id FROM urls WHERE name = :name';
@@ -80,25 +81,78 @@ $app->post(
         $stmt->bindValue(':name', $normalizedUrl);
         $stmt->execute();
         $finded = $stmt->fetch(PDO::FETCH_ASSOC);
-        //dump($finded);die;
 
         if (!$finded) {
-            $sqlInsert = 'INSERT INTO urls(name) VALUES(:name)';
+            $now = Carbon::now()->toDateTimeString();
+
+            $sqlInsert = 'INSERT INTO urls(name, created_at) VALUES(:name, :now)';
             $stmt = $pdo->prepare($sqlInsert);
-    
             $stmt->bindValue(':name', $normalizedUrl);
-    
+            $stmt->bindValue(':now', $now);
             $stmt->execute();
+
             $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
-            dump($pdo->lastInsertId('urls_id_seq'));
+            $id = $pdo->lastInsertId('urls_id_seq');
+            $url = $router->urlFor('url', ['id' => $id]);
+
+            return $response->withRedirect($url, 302);
         } else {
             $id = $finded['id'];
             $this->get('flash')->addMessage('unsuccess', 'Страница уже существует');
+            $url = $router->urlFor('url', ['id' => $id]);
+
+            return $response->withRedirect($url, 302);
         }
-
-
-        
     }
 )->setName('addUrls');
+
+$app->get(
+    '/urls',
+    function (Request $request, Response $response, $args) {
+        $template = 'urls.html';
+
+        $pdo = Connection::get()->connect();
+        $sql = 'SELECT * FROM urls ORDER BY created_at DESC NULLS LAST';
+        $stm = $pdo->prepare($sql);
+        $stm->execute();
+        $sites = $stm->fetchAll(PDO::FETCH_ASSOC);
+
+        return $this->get('view')->render(
+            $response,
+            'layout.html',
+            [
+                'template' => $template,
+                'sites' => $sites,
+            ]
+        );
+    }
+)->setName('urls');
+
+$app->get(
+    '/urls/{id}',
+    function (Request $request, Response $response, $args) {
+        $template = 'url.html';
+        $id = $args['id'];
+
+        $pdo = Connection::get()->connect();
+        $sql = 'SELECT * FROM urls WHERE id=:id';
+        $stm = $pdo->prepare($sql);
+        $stm->bindValue(':id', $id);
+        $stm->execute();
+        $site = $stm->fetch(PDO::FETCH_ASSOC);
+
+        $messages = $this->get('flash')->getMessages();
+
+        return $this->get('view')->render(
+            $response,
+            'layout.html',
+            [
+            'template' => $template,
+            'site' => $site,
+            'messages' => $messages,
+            ]
+        );
+    }
+)->setName('url');
 
 $app->run();
