@@ -18,13 +18,15 @@ $container = new Container();
 AppFactory::setContainer($container);
 
 $container->set(
-    'view', function () {
+    'view',
+    function () {
         return Twig::create('../templates', ['cache' => false]);
     }
 );
 
 $container->set(
-    'flash', function () {
+    'flash',
+    function () {
         return new \Slim\Flash\Messages();
     }
 );
@@ -128,7 +130,6 @@ $app->get(
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        // dump($sites);die;
 
         return $this->get('view')->render(
             $response,
