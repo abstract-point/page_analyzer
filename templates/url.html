@@ -1,19 +1,49 @@
 <h1>Сайт: {{ site.name }}</h1>
 <div class="table-responsive">
-    <table class="table table-bordered table-hover text-nowrap" data-test="url">
+  <table class="table table-bordered table-hover text-nowrap" data-test="url">
+    <tbody>
+      <tr>
+        <td>ID</td>
+        <td>{{ site.id }}</td>
+      </tr>
+      <tr>
+        <td>Имя</td>
+        <td>{{ site.name }}</td>
+      </tr>
+      <tr>
+        <td>Дата создания</td>
+        <td>{{ site.created_at }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<h2 class="mt-5 mb-3">Проверки</h1>
+  <form action="/urls/{{ site.id }}/checks" method="POST" class="mb-3">
+    <button type="submit" class="btn btn-primary">Запустить проверку</button>
+  </form>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover text-nowrap" data-test="checks">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Код ответа</th>
+          <th>h1</th>
+          <th>title</th>
+          <th>description</th>
+          <th>Дата создания</th>
+        </tr>
+      </thead>
       <tbody>
+        {% for check in checks %}
         <tr>
-          <td>ID</td>
-          <td>{{ site.id }}</td>
+          <td>{{ check.id }}</td>
+          <td>{{ check.status_code }}</td>
+          <td>{{ check.h1 }}</td>
+          <td>{{ check.title }}</td>
+          <td>{{ check.description }}</td>
+          <td>{{ check.created_at }}</td>
         </tr>
-        <tr>
-          <td>Имя</td>
-          <td>{{ site.name }}</td>
-        </tr>
-        <tr>
-          <td>Дата создания</td>
-          <td>{{ site.created_at }}</td>
-        </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>

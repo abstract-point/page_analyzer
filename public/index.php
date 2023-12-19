@@ -17,13 +17,17 @@ session_start();
 $container = new Container();
 AppFactory::setContainer($container);
 
-$container->set('view', function () {
-    return Twig::create('../templates', ['cache' => false]);
-});
+$container->set(
+    'view', function () {
+        return Twig::create('../templates', ['cache' => false]);
+    }
+);
 
-$container->set('flash', function () {
-    return new \Slim\Flash\Messages();
-});
+$container->set(
+    'flash', function () {
+        return new \Slim\Flash\Messages();
+    }
+);
 
 $app = AppFactory::create();
 $app->add(TwigMiddleware::createFromContainer($app));
@@ -108,14 +112,23 @@ $app->post(
 
 $app->get(
     '/urls',
-    function (Request $request, Response $response, $args) {
+    function (Request $request, Response $response) {
         $template = 'urls.html';
 
         $pdo = Connection::get()->connect();
-        $sql = 'SELECT * FROM urls ORDER BY created_at DESC NULLS LAST';
-        $stm = $pdo->prepare($sql);
-        $stm->execute();
-        $sites = $stm->fetchAll(PDO::FETCH_ASSOC);
+        $sql = 'SELECT urls.id, urls.name,
+                    MAX(url_checks.created_at) AS last_check,
+                    url_checks.status_code AS status_code
+                    FROM urls
+                    LEFT JOIN url_checks
+                    ON urls.id = url_checks.url_id
+                    GROUP BY urls.id, status_code
+                    ORDER BY urls.created_at
+                    DESC NULLS LAST';
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute();
+        $sites = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // dump($sites);die;
 
         return $this->get('view')->render(
             $response,
@@ -135,11 +148,18 @@ $app->get(
         $id = $args['id'];
 
         $pdo = Connection::get()->connect();
-        $sql = 'SELECT * FROM urls WHERE id=:id';
-        $stm = $pdo->prepare($sql);
-        $stm->bindValue(':id', $id);
-        $stm->execute();
-        $site = $stm->fetch(PDO::FETCH_ASSOC);
+
+        $sqlUrl = 'SELECT * FROM urls WHERE id=:id';
+        $stmUrl = $pdo->prepare($sqlUrl);
+        $stmUrl->bindValue(':id', $id);
+        $stmUrl->execute();
+        $site = $stmUrl->fetch(PDO::FETCH_ASSOC);
+
+        $sqlCheks = 'SELECT * FROM url_checks WHERE url_id=:id';
+        $stmChecks = $pdo->prepare($sqlCheks);
+        $stmChecks->bindValue(':id', $id);
+        $stmChecks->execute();
+        $checks = $stmChecks->fetchAll(PDO::FETCH_ASSOC);
 
         $messages = $this->get('flash')->getMessages();
 
@@ -149,10 +169,32 @@ $app->get(
             [
             'template' => $template,
             'site' => $site,
+            'checks' => $checks,
             'messages' => $messages,
             ]
         );
     }
 )->setName('url');
+
+$app->post(
+    '/urls/{url_id}/checks',
+    function (Request $request, Response $response, $args) use ($router) {
+        $id = $args['url_id'];
+        $now = Carbon::now()->toDateTimeString();
+
+        $pdo = Connection::get()->connect();
+        $sql = 'INSERT INTO url_checks(url_id, created_at) VALUES(:id, :now)';
+        $stm = $pdo->prepare($sql);
+        $stm->bindValue(':id', $id);
+        $stm->bindValue(':now', $now);
+        $stm->execute();
+
+        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+
+        $url = $router->urlFor('url', ['id' => $id]);
+
+        return $response->withRedirect($url, 302);
+    }
+)->setName('checks');
 
 $app->run();
