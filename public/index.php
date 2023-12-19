@@ -11,6 +11,10 @@ use Slim\Views\TwigMiddleware;
 use App\Database\Connection;
 use Valitron\Validator;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ConnectException;
+use DiDom\Document;
+use Illuminate\Support;
 
 session_start();
 
@@ -181,14 +185,40 @@ $app->post(
     '/urls/{url_id}/checks',
     function (Request $request, Response $response, $args) use ($router) {
         $id = $args['url_id'];
+        $name = $request->getParsedBodyParam('url')['name'];
         $now = Carbon::now()->toDateTimeString();
+        $client = new Client();
 
+        try {
+            $res = $client->request('GET', $name);
+            $code = $res->getStatusCode();
+        } catch (ConnectException $e) {
+            $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
+            $url = $router->urlFor('url', ['id' => $id]);
+
+            return $response->withRedirect($url, 302);
+        }
+
+        $document = new Document();
+        $document->loadHtmlFile($name);
+        $title = optional($document->first('title'))->text();
+        $h1 = optional($document->first('h1'))->text();
+        $description = optional($document->first('meta[name=description]'))->getAttribute('content');
+        // dd($title, $h1, $description);
+        
         $pdo = Connection::get()->connect();
-        $sql = 'INSERT INTO url_checks(url_id, created_at) VALUES(:id, :now)';
-        $stm = $pdo->prepare($sql);
-        $stm->bindValue(':id', $id);
-        $stm->bindValue(':now', $now);
-        $stm->execute();
+        $sqlInsert = 'INSERT INTO url_checks(url_id, status_code, h1, title, description, created_at)
+                      VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)';
+        $stmInsert = $pdo->prepare($sqlInsert);
+        $params = [
+            ':url_id' => $id,
+            ':status_code' => $code,
+            ':h1' => $h1,
+            ':title' => $title,
+            ':description' => $description,
+            ':created_at' => $now,
+        ];
+        $stmInsert->execute($params);
 
         $this->get('flash')->addMessage('success', 'Страница успешно проверена');
 

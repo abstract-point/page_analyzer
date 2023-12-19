@@ -19,10 +19,11 @@
 </div>
 <h2 class="mt-5 mb-3">Проверки</h1>
   <form action="/urls/{{ site.id }}/checks" method="POST" class="mb-3">
+    <input type="hidden" value="{{ site.name }}" name="url[name]">
     <button type="submit" class="btn btn-primary">Запустить проверку</button>
   </form>
   <div class="table-responsive">
-    <table class="table table-bordered table-hover text-nowrap" data-test="checks">
+    <table class="table table-bordered table-hover" data-test="checks">
       <thead>
         <tr>
           <th>ID</th>
