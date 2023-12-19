@@ -204,8 +204,7 @@ $app->post(
         $title = optional($document->first('title'))->text();
         $h1 = optional($document->first('h1'))->text();
         $description = optional($document->first('meta[name=description]'))->getAttribute('content');
-        // dd($title, $h1, $description);
-        
+
         $pdo = Connection::get()->connect();
         $sqlInsert = 'INSERT INTO url_checks(url_id, status_code, h1, title, description, created_at)
                       VALUES(:url_id, :status_code, :h1, :title, :description, :created_at)';
