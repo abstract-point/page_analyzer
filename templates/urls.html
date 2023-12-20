@@ -1,15 +1,13 @@
 <h1>Сайты</h1>
 <div class="table-responsive">
     <table class="table table-bordered table-hover text-nowrap" data-test="urls">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Имя</th>
-                <th>Последняя проверка</th>
-                <th>Код ответа</th>
-            </tr>
-        </thead>
         <tbody>
+            <tr>
+                <td>ID</td>
+                <td>Имя</td>
+                <td>Последняя проверка</td>
+                <td>Код ответа</td>
+            </tr>
             {% for url in sites %}
             <tr>
                 <td>{{ url.id }}</td>
