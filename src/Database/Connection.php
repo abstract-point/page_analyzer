@@ -12,13 +12,12 @@ final class Connection
 
     /**
      * Подключение к базе данных и возврат экземпляра объекта \PDO
-     * 
+     *
      * @return \PDO
      * @throws \Exception
      */
     public function connect()
     {
-        
         $params = parse_url(getenv('DATABASE_URL'));
         if ($params === false) {
             throw new \Exception("Error reading database configuration file");
@@ -40,7 +39,7 @@ final class Connection
 
     /**
      * Возврат экземпляра объекта Connection
-     * 
+     *
      * @return Connection
      */
     public static function get()
@@ -54,6 +53,5 @@ final class Connection
 
     protected function __construct()
     {
-
     }
 }
