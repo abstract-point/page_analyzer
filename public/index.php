@@ -46,6 +46,7 @@ $router = $app->getRouteCollector()->getRouteParser();
 $app->get(
     '/',
     function (Request $request, Response $response, $args) {
+        dd(parse_url('postgres://evolva:4iuJYMtPBflWtsGwVwuggnVH8GzqLBcM@dpg-cm1cjaq1hbls73agnit0-a/page_analyzer_sz89'));
         $template = 'main.html';
         return $this->get('view')->render(
             $response,
