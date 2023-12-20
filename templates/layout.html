@@ -43,6 +43,11 @@
             {{ messages.unsuccess.0 }}
         </div>
         {% endif %}
+        {% if messages.info %}
+        <div class="alert alert-warning" role="alert">
+            {{ messages.info.0 }}
+        </div>
+        {% endif %}
         <div class="container-lg mt-3">
             {% include template %}
         </div>
