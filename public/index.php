@@ -13,6 +13,8 @@ use Valitron\Validator;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\TransferException;
 use DiDom\Document;
 use Illuminate\Support;
 
@@ -186,21 +188,34 @@ $app->post(
     function (Request $request, Response $response, $args) use ($router) {
         $id = $args['url_id'];
         $name = $request->getParsedBodyParam('url')['name'];
-        $now = Carbon::now()->toDateTimeString();
+
+        $now = Carbon::now();
+        $now->setTimezone('Europe/Moscow')->toDateTimeString();
+
         $client = new Client();
 
         try {
             $res = $client->request('GET', $name);
             $code = $res->getStatusCode();
-        } catch (ConnectException $e) {
-            $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
-            $url = $router->urlFor('url', ['id' => $id]);
+            $body = $res->getBody()->getContents();
+            $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+        } catch (TransferException $e) {
+            $exceptionClass = get_class($e);
+            if ($exceptionClass === 'GuzzleHttp\Exception\ConnectException') {
+                $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
+                $url = $router->urlFor('url', ['id' => $id]);
 
-            return $response->withRedirect($url, 302);
+                return $response->withRedirect($url, 302);
+            } elseif ($exceptionClass === 'GuzzleHttp\Exception\ClientException') {
+                $this->get('flash')->addMessage('info', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
+                $code = $e->getResponse()->getStatusCode();
+                $body = $e->getResponse()->getBody()->getContents();
+            }
         }
 
         $document = new Document();
-        $document->loadHtmlFile($name);
+        $document->loadHtml($body);
+
         $title = optional($document->first('title'))->text();
         $h1 = optional($document->first('h1'))->text();
         $description = optional($document->first('meta[name=description]'))->getAttribute('content');
@@ -218,8 +233,6 @@ $app->post(
             ':created_at' => $now,
         ];
         $stmInsert->execute($params);
-
-        $this->get('flash')->addMessage('success', 'Страница успешно проверена');
 
         $url = $router->urlFor('url', ['id' => $id]);
 
