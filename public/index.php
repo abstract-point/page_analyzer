@@ -76,7 +76,7 @@ $app->post(
             $errors = $v->errors();
             $template = 'main.html';
             return $this->get('view')->render(
-                $response,
+                $response->withStatus(422),
                 'layout.html',
                 [
                 'errors' => $errors,
