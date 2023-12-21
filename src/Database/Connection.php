@@ -20,10 +20,11 @@ final class Connection
     {
         $databaseUrl = getenv('DATABASE_URL') ?: '';
 
-        $username = parse_url($databaseUrl, PHP_URL_USER);
-        $password = parse_url($databaseUrl, PHP_URL_PASS);
-        $host = parse_url($databaseUrl, PHP_URL_HOST);
-        $dbName = ltrim(parse_url($databaseUrl, PHP_URL_PATH), '/');
+        $username = parse_url($databaseUrl, PHP_URL_USER) ?: '';
+        $password = parse_url($databaseUrl, PHP_URL_PASS) ?: '';
+        $host = parse_url($databaseUrl, PHP_URL_HOST) ?: '';
+        $path = parse_url($databaseUrl, PHP_URL_PATH) ?: '';
+        $dbName = ltrim($path, '/');
 
         $conStr = sprintf(
             "pgsql:host=%s;dbname=%s;user=%s;password=%s",
