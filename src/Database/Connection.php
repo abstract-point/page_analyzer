@@ -19,16 +19,11 @@ final class Connection
     public function connect()
     {
         $databaseUrl = getenv('DATABASE_URL') ?: '';
-        $params = parse_url($databaseUrl);
 
-        if ($params === false) {
-            throw new \Exception("Error reading database configuration file");
-        }
-
-        $username = $params['user'];
-        $password = $params['pass'];
-        $host = $params['host'];
-        $dbName = ltrim($params['path'], '/');
+        $username = parse_url($databaseUrl, PHP_URL_USER);
+        $password = parse_url($databaseUrl, PHP_URL_PASS);
+        $host = parse_url($databaseUrl, PHP_URL_HOST);
+        $dbName = ltrim(parse_url($databaseUrl, PHP_URL_PATH), '/');
 
         $conStr = sprintf(
             "pgsql:host=%s;dbname=%s;user=%s;password=%s",
