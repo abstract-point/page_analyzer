@@ -29,7 +29,7 @@ final class Connection
         $password = $params['pass'];
         $host = $params['host'];
         $dbName = ltrim($params['path'], '/');
-        
+
         $conStr = sprintf(
             "pgsql:host=%s;dbname=%s;user=%s;password=%s",
             $host,
