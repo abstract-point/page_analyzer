@@ -61,13 +61,13 @@ $app->get(
 $app->post(
     '/urls',
     function (Request $request, Response $response) use ($router) {
-        $params = $request->getParsedBody();
+        $params = $request->getParsedBodyParam('url');
 
-        $v = new Validator($params['url']);
+        $v = new Validator($params);
         $v->rule('required', 'name');
         $v->rule('url', 'name');
         $v->rule('lengthBetween', 'name', 1, 255);
-        $name = $params['url']['name'];
+        $name = $params['name'];
 
         if ($v->validate()) {
             $parsedUrl = parse_url($name);
@@ -104,7 +104,7 @@ $app->post(
             $stmt->execute();
 
             $this->get('flash')->addMessage('success', 'Страница успешно добавлена');
-            $id = $pdo->lastInsertId('urls_id_seq');
+            $id = $pdo->lastInsertId() ?: '';
             $url = $router->urlFor('url', ['id' => $id]);
 
             return $response->withRedirect($url, 302);
@@ -199,18 +199,15 @@ $app->post(
             $code = $res->getStatusCode();
             $body = $res->getBody()->getContents();
             $this->get('flash')->addMessage('success', 'Страница успешно проверена');
-        } catch (TransferException $e) {
-            $exceptionClass = get_class($e);
-            if ($exceptionClass === 'GuzzleHttp\Exception\ConnectException') {
-                $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
-                $url = $router->urlFor('url', ['id' => $id]);
+        } catch (ConnectException $e) {
+            $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
+            $url = $router->urlFor('url', ['id' => $id]);
 
-                return $response->withRedirect($url, 302);
-            } elseif ($exceptionClass === 'GuzzleHttp\Exception\ClientException') {
-                $this->get('flash')->addMessage('info', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
-                $code = $e->getResponse()->getStatusCode();
-                $body = $e->getResponse()->getBody()->getContents();
-            }
+            return $response->withRedirect($url, 302);
+        } catch (ClientException $e) {
+            $this->get('flash')->addMessage('info', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
+            $code = $e->getResponse()->getStatusCode();
+            $body = $e->getResponse()->getBody()->getContents();
         }
 
         $document = new Document();

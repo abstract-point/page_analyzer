@@ -18,17 +18,24 @@ final class Connection
      */
     public function connect()
     {
-        $params = parse_url(getenv('DATABASE_URL'));
+        $databaseUrl = getenv('DATABASE_URL') ?: '';
+        $params = parse_url($databaseUrl);
+
         if ($params === false) {
             throw new \Exception("Error reading database configuration file");
         }
 
+        $username = $params['user'];
+        $password = $params['pass'];
+        $host = $params['host'];
+        $dbName = ltrim($params['path'], '/');
+        
         $conStr = sprintf(
             "pgsql:host=%s;dbname=%s;user=%s;password=%s",
-            $params['host'],
-            ltrim($params['path'], '/'),
-            $params['user'],
-            $params['pass']
+            $host,
+            $dbName,
+            $username,
+            $password
         );
 
         $pdo = new \PDO($conStr);
