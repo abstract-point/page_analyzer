@@ -23,18 +23,18 @@ final class Connection
         $username = parse_url($databaseUrl, PHP_URL_USER) ?: '';
         $password = parse_url($databaseUrl, PHP_URL_PASS) ?: '';
         $host = parse_url($databaseUrl, PHP_URL_HOST) ?: '';
+        $port = parse_url($databaseUrl, PHP_URL_PORT) ?: '5432';
         $path = parse_url($databaseUrl, PHP_URL_PATH) ?: '';
         $dbName = ltrim($path, '/');
 
         $conStr = sprintf(
-            "pgsql:host=%s;dbname=%s;user=%s;password=%s",
+            "pgsql:host=%s;port=%s;dbname=%s",
             $host,
-            $dbName,
-            $username,
-            $password
+            $port,
+            $dbName
         );
 
-        $pdo = new \PDO($conStr);
+        $pdo = new \PDO($conStr, $username, $password);
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
         return $pdo;
