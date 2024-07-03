@@ -18,7 +18,7 @@ final class Connection
      */
     public function connect()
     {
-        $databaseUrl = getenv('DATABASE_URL') ?: '';
+        $databaseUrl = getenv('DATABASE_URL_ANALYZER') ?: '';
 
         $username = parse_url($databaseUrl, PHP_URL_USER) ?: '';
         $password = parse_url($databaseUrl, PHP_URL_PASS) ?: '';
