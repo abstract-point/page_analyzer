@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Exception\TransferException;
 use DiDom\Document;
 use Illuminate\Support;
@@ -44,7 +45,7 @@ $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get(
-    '/',
+    '/page-analyzer',
     function (Request $request, Response $response, $args) {
         $template = 'main.html';
         return $this->get('view')->render(
@@ -59,7 +60,7 @@ $app->get(
 )->setName('main');
 
 $app->post(
-    '/urls',
+    '/page-analyzer/urls',
     function (Request $request, Response $response) use ($router) {
         $params = $request->getParsedBodyParam('url');
 
@@ -119,7 +120,7 @@ $app->post(
 )->setName('addUrls');
 
 $app->get(
-    '/urls',
+    '/page-analyzer/urls',
     function (Request $request, Response $response) {
         $template = 'urls.html';
 
@@ -149,7 +150,7 @@ $app->get(
 )->setName('urls');
 
 $app->get(
-    '/urls/{id}',
+    '/page-analyzer/urls/{id}',
     function (Request $request, Response $response, $args) {
         $template = 'url.html';
         $id = $args['id'];
@@ -184,7 +185,7 @@ $app->get(
 )->setName('url');
 
 $app->post(
-    '/urls/{url_id}/checks',
+    '/page-analyzer/urls/{url_id}/checks',
     function (Request $request, Response $response, $args) use ($router) {
         $id = $args['url_id'];
         $name = $request->getParsedBodyParam('url')['name'];
@@ -199,15 +200,27 @@ $app->post(
             $code = $res->getStatusCode();
             $body = $res->getBody()->getContents();
             $this->get('flash')->addMessage('success', 'Страница успешно проверена');
+
         } catch (ConnectException $e) {
             $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
             $url = $router->urlFor('url', ['id' => $id]);
 
             return $response->withRedirect($url, 302);
+
         } catch (ClientException $e) {
             $this->get('flash')->addMessage('info', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
             $code = $e->getResponse()->getStatusCode();
             $body = $e->getResponse()->getBody()->getContents();
+
+        } catch (RequestException $e) {
+            if ($e->getHandlerContext()['errno'] === 60) {
+                $this->get('flash')->addMessage('unsuccess', 'Ошибка SSL: проблема с сертификатом сайта');
+            } else {
+                $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке');
+            }
+            $url = $router->urlFor('url', ['id' => $id]);
+
+            return $response->withRedirect($url, 302);
         }
 
         $document = new Document();

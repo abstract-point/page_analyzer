@@ -18,11 +18,11 @@
   </table>
 </div>
 <h2 class="mt-5 mb-3">Проверки</h1>
-  <form action="/urls/{{ site.id }}/checks" method="POST" class="mb-3">
+  <form action="/page-analyzer/urls/{{ site.id }}/checks" method="POST" class="mb-3">
     <input type="hidden" value="{{ site.name }}" name="url[name]">
     <button type="submit" class="btn btn-primary">Запустить проверку</button>
   </form>
-  <table class="table table-bordered table-hover" data-test="checks">
+  <table class="table table-bordered table-hover mb-4" data-test="checks">
     <tbody>
       <tr>
         <td>ID</td>
