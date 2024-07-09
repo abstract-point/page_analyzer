@@ -4,7 +4,7 @@
         <h1 class="display-3">Анализатор страниц</h1>
         <p class="lead">Бесплатно проверяйте сайты на SEO пригодность</p>
         <form action="/page-analyzer/urls" method="post" class="row">
-            <div class="col-8">
+            <div class="col-12 col-md-8">
                 <input type="text" name="url[name]"
                     class="form-control form-control-lg {% if errors['name'] %} is-invalid {% endif %}"
                     placeholder="https://www.example.com" required value="{{ name }}">
@@ -14,8 +14,8 @@
                 </div>
                 {% endif %}
             </div>
-            <div class="col-2">
-                <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3" value="Проверить">
+            <div class="col-12 col-md-4 mt-3 mt-md-0">
+                <input type="submit" class="btn btn-primary w-100 btn-lg text-uppercase" value="Проверить">
             </div>
         </form>
     </div>
