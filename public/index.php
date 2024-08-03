@@ -200,18 +200,15 @@ $app->post(
             $code = $res->getStatusCode();
             $body = $res->getBody()->getContents();
             $this->get('flash')->addMessage('success', 'Страница успешно проверена');
-
         } catch (ConnectException $e) {
             $this->get('flash')->addMessage('unsuccess', 'Произошла ошибка при проверке, не удалось подключиться');
             $url = $router->urlFor('url', ['id' => $id]);
 
             return $response->withRedirect($url, 302);
-
         } catch (ClientException $e) {
             $this->get('flash')->addMessage('info', 'Проверка была выполнена успешно, но сервер ответил с ошибкой');
             $code = $e->getResponse()->getStatusCode();
             $body = $e->getResponse()->getBody()->getContents();
-
         } catch (RequestException $e) {
             if ($e->getHandlerContext()['errno'] === 60) {
                 $this->get('flash')->addMessage('unsuccess', 'Ошибка SSL: проблема с сертификатом сайта');
