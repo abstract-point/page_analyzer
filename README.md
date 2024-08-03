@@ -1,5 +1,5 @@
 # Page Analyzer
-### Hexlet tests and linter status:
+### Linter status:
 [![Actions Status](https://github.com/Ivan-Lysenko/php-project-9/actions/workflows/main.yml/badge.svg)](https://github.com/Ivan-Lysenko/php-project-9/actions)
 
 ## Description
