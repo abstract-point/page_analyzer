@@ -9,6 +9,6 @@ A simple SEO optimizer. Designed for parsing websites, extracting title, descrip
 ## Production
 The production version of the application is deployed and can be accessed at the following URL:
 ```text
-https://ivandev.pro/page-analyzer
+https://page-analyzer.ivandev.pro/
 ```
-[CLICK](https://ivandev.pro/page-analyzer)
+[CLICK](https://page-analyzer.ivandev.pro)
