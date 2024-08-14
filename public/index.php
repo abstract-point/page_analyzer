@@ -45,7 +45,7 @@ $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get(
-    '/page-analyzer',
+    '/',
     function (Request $request, Response $response, $args) {
         $template = 'main.html';
         return $this->get('view')->render(
@@ -60,7 +60,7 @@ $app->get(
 )->setName('main');
 
 $app->post(
-    '/page-analyzer/urls',
+    '/urls',
     function (Request $request, Response $response) use ($router) {
         $params = $request->getParsedBodyParam('url');
 
@@ -120,7 +120,7 @@ $app->post(
 )->setName('addUrls');
 
 $app->get(
-    '/page-analyzer/urls',
+    '/urls',
     function (Request $request, Response $response) {
         $template = 'urls.html';
 
@@ -150,7 +150,7 @@ $app->get(
 )->setName('urls');
 
 $app->get(
-    '/page-analyzer/urls/{id}',
+    '/urls/{id}',
     function (Request $request, Response $response, $args) {
         $template = 'url.html';
         $id = $args['id'];
@@ -185,7 +185,7 @@ $app->get(
 )->setName('url');
 
 $app->post(
-    '/page-analyzer/urls/{url_id}/checks',
+    '/urls/{url_id}/checks',
     function (Request $request, Response $response, $args) use ($router) {
         $id = $args['url_id'];
         $name = $request->getParsedBodyParam('url')['name'];
